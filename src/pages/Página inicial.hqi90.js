@@ -1,25 +1,31 @@
 import { posts } from 'wix-blog-backend';
 
 function substringByEstimatedLines(text, lineHeight, containerHeight, charsPerLine) {
-    const lines = Math.floor(containerHeight / lineHeight);
-    const totalChars = lines * charsPerLine;
-    return text.substring(0, totalChars) + '...';
+	const lines = Math.floor(containerHeight / lineHeight);
+	const totalChars = lines * charsPerLine;
+	return text.substring(0, totalChars) + '...';
 }
 
 $w.onReady(function () {
 	const lineHeight = 25;
-    const containerHeight = 25;
-    const charsPerLine = 24;
+	const containerHeight = 25;
+	const charsPerLine = 24;
+	const itemsPerPage = 16;
+	let currentPage = 1;
 
-	posts.listPosts()
-	.then((result) => {
-		const posts = result.posts;
-		console.log("Quantidade de posts:", posts.length);
-		$w("#repeater4").data = posts;
-	})
-	.catch((error) => {
-		console.error("Erro ao carregar os posts:", error);
-	});
+	function loadPosts(pafe) {
+		const offset = (page - 1) * itemsPerPage;
+		posts.listPosts({ offset: offset, limit: itemsPerPage })
+			.then((result) => {
+				const posts = result.posts;
+				console.log("Quantidade de posts:", posts.length);
+				$w("#repeater4").data = posts;
+			})
+			.catch((error) => {
+				console.error("Erro ao carregar os posts:", error);
+			});
+	}
+	loadPosts(currentPage);
 
 	$w("#repeater4").onItemReady(($item, itemData) => {
 		let viewURL;
@@ -41,8 +47,13 @@ $w.onReady(function () {
 
 		$item("#tituloBlog").text = substringByEstimatedLines(itemData.title, lineHeight, containerHeight, charsPerLine);
 
-		$item("#descricaoBlog").text = itemData.excerpt.substring(0,50) + "...";
+		$item("#descricaoBlog").text = itemData.excerpt.substring(0, 50) + "...";
 
 		$item("#linkBlog").link = "/post/" + itemData.slug;
 	});
+
+	$w("#pagination1").onChange((event) => {
+		currentPage = event.target.value;
+		loadPosts(currentPage);
+	})
 });
